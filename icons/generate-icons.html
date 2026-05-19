@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><title>Generate Hafaza Icons</title></head>
+<body>
+<p>Open this file in a browser to generate PNG icons from the SVG below.</p>
+<canvas id="c192" width="192" height="192"></canvas>
+<canvas id="c512" width="512" height="512"></canvas>
+<script>
+function drawIcon(canvas) {
+  const ctx = canvas.getContext('2d');
+  const size = canvas.width;
+  const center = size / 2;
+
+  // Background gradient
+  const grad = ctx.createLinearGradient(0, 0, size, size);
+  grad.addColorStop(0, '#1a1a2e');
+  grad.addColorStop(1, '#16213e');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
+
+  // Gold circle border
+  ctx.strokeStyle = '#d4af37';
+  ctx.lineWidth = size * 0.03;
+  ctx.beginPath();
+  ctx.arc(center, center, size * 0.38, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Arabic text "حافظة"
+  ctx.fillStyle = '#d4af37';
+  ctx.font = `bold ${size * 0.22}px "Amiri", serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('حافظة', center, center);
+}
+
+drawIcon(document.getElementById('c192'));
+drawIcon(document.getElementById('c512'));
+
+// Instructions
+document.body.innerHTML += '<p>Right-click each canvas and "Save Image As" icon-192.png and icon-512.png</p>';
+</script>
+</body>
+</html>

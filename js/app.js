@@ -13,17 +13,16 @@ const App = (() => {
    * Initialize the app
    */
   async function init() {
+    const loadingText = document.querySelector('.loading-text');
     try {
-      // Initialize database
+      loadingText.textContent = 'تهيئة قاعدة البيانات...';
       await HafazaDB.init();
 
-      // Load Quran index
+      loadingText.textContent = 'تحميل فهرس السور...';
       await QuranData.loadIndex();
 
-      // Setup navigation
+      loadingText.textContent = 'إعداد الواجهة...';
       setupNavigation();
-
-      // Setup voice screen
       setupVoiceScreen();
 
       // Hide loading screen, show home
@@ -37,7 +36,10 @@ const App = (() => {
       QuranData.loadFull().catch(err => console.warn('Background load failed:', err));
     } catch (error) {
       console.error('App initialization failed:', error);
-      document.querySelector('.loading-text').textContent = 'خطأ في التحميل. أعد تحميل الصفحة.';
+      loadingText.textContent = 'خطأ: ' + (error.message || 'فشل التحميل');
+      // Still try to show something
+      document.getElementById('loading-screen').classList.remove('active');
+      document.getElementById('home-screen').classList.add('active');
     }
   }
 

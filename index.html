@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#16213e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Hafaza - حافظة</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="screen active">
+      <div class="loading-content">
+        <h1 class="app-title">حافظة</h1>
+        <p class="app-subtitle">Hafaza</p>
+        <div class="loading-spinner"></div>
+        <p class="loading-text">جاري التحميل...</p>
+      </div>
+    </div>
+
+    <!-- Home Screen -->
+    <div id="home-screen" class="screen">
+      <header class="app-header">
+        <h1>حافظة</h1>
+        <button id="settings-btn" class="icon-btn" aria-label="Settings">⚙️</button>
+      </header>
+
+      <div class="stats-card">
+        <div class="stat">
+          <span class="stat-value" id="stat-memorized">0</span>
+          <span class="stat-label">آيات محفوظة</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="stat-progress">0%</span>
+          <span class="stat-label">التقدم</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="stat-streak">0</span>
+          <span class="stat-label">أيام متتالية</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>مراجعة اليوم</h2>
+        <div id="review-due" class="review-card">
+          <p class="review-count">لا توجد مراجعات مطلوبة</p>
+          <button id="start-review-btn" class="btn btn-primary" style="display:none">ابدأ المراجعة</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>السور</h2>
+        <div id="surah-list" class="surah-list"></div>
+      </div>
+
+      <nav class="bottom-nav">
+        <button class="nav-btn active" data-screen="home">🏠<span>الرئيسية</span></button>
+        <button class="nav-btn" data-screen="memorize">📖<span>حفظ</span></button>
+        <button class="nav-btn" data-screen="review">🔄<span>مراجعة</span></button>
+        <button class="nav-btn" data-screen="voice">🎤<span>تسميع</span></button>
+      </nav>
+    </div>
+
+    <!-- Surah View Screen -->
+    <div id="surah-screen" class="screen">
+      <header class="app-header">
+        <button id="surah-back-btn" class="icon-btn">→</button>
+        <h1 id="surah-title"></h1>
+        <span id="surah-info"></span>
+      </header>
+
+      <div id="ayah-list" class="ayah-list"></div>
+
+      <nav class="bottom-nav">
+        <button class="nav-btn" data-screen="home">🏠<span>الرئيسية</span></button>
+        <button class="nav-btn active" data-screen="memorize">📖<span>حفظ</span></button>
+        <button class="nav-btn" data-screen="review">🔄<span>مراجعة</span></button>
+        <button class="nav-btn" data-screen="voice">🎤<span>تسميع</span></button>
+      </nav>
+    </div>
+
+    <!-- Review Screen -->
+    <div id="review-screen" class="screen">
+      <header class="app-header">
+        <button id="review-back-btn" class="icon-btn">→</button>
+        <h1>مراجعة</h1>
+      </header>
+
+      <div id="review-content" class="review-content">
+        <div class="review-card-container">
+          <div id="review-ayah-card" class="flashcard">
+            <p id="review-surah-name" class="review-surah-name"></p>
+            <p id="review-ayah-text" class="review-ayah-text"></p>
+            <p id="review-ayah-number" class="review-ayah-number"></p>
+          </div>
+          <div class="review-actions">
+            <button id="review-forgot" class="btn btn-danger">نسيت</button>
+            <button id="review-hard" class="btn btn-warning">صعب</button>
+            <button id="review-good" class="btn btn-success">جيد</button>
+            <button id="review-easy" class="btn btn-primary">سهل</button>
+          </div>
+        </div>
+        <div id="review-empty" class="empty-state">
+          <p>🎉</p>
+          <p>لا توجد مراجعات مطلوبة اليوم</p>
+        </div>
+      </div>
+
+      <nav class="bottom-nav">
+        <button class="nav-btn" data-screen="home">🏠<span>الرئيسية</span></button>
+        <button class="nav-btn" data-screen="memorize">📖<span>حفظ</span></button>
+        <button class="nav-btn active" data-screen="review">🔄<span>مراجعة</span></button>
+        <button class="nav-btn" data-screen="voice">🎤<span>تسميع</span></button>
+      </nav>
+    </div>
+
+    <!-- Voice Verification Screen -->
+    <div id="voice-screen" class="screen">
+      <header class="app-header">
+        <button id="voice-back-btn" class="icon-btn">→</button>
+        <h1>تسميع</h1>
+      </header>
+
+      <div class="voice-content">
+        <div class="voice-selector">
+          <select id="voice-surah-select" class="select-input">
+            <option value="">اختر السورة</option>
+          </select>
+          <div class="ayah-range">
+            <input type="number" id="voice-ayah-from" class="num-input" placeholder="من" min="1">
+            <span>—</span>
+            <input type="number" id="voice-ayah-to" class="num-input" placeholder="إلى" min="1">
+          </div>
+        </div>
+
+        <div id="voice-ayah-display" class="voice-ayah-display">
+          <p id="voice-current-ayah" class="voice-current-ayah-text"></p>
+          <p id="voice-ayah-ref" class="voice-ayah-ref"></p>
+        </div>
+
+        <div id="voice-result" class="voice-result hidden">
+          <div id="voice-result-text" class="voice-result-text"></div>
+          <div id="voice-comparison" class="voice-comparison"></div>
+        </div>
+
+        <div class="voice-controls">
+          <button id="voice-record-btn" class="record-btn" disabled>
+            <span class="record-icon">🎤</span>
+            <span class="record-label">اضغط للتسجيل</span>
+          </button>
+          <div id="voice-status" class="voice-status">
+            <span id="voice-status-text">اختر السورة والآيات للبدء</span>
+          </div>
+          <div id="voice-model-status" class="model-status">
+            <span id="model-status-text">نموذج الصوت: غير محمّل</span>
+            <button id="load-model-btn" class="btn btn-small">تحميل النموذج</button>
+          </div>
+        </div>
+      </div>
+
+      <nav class="bottom-nav">
+        <button class="nav-btn" data-screen="home">🏠<span>الرئيسية</span></button>
+        <button class="nav-btn" data-screen="memorize">📖<span>حفظ</span></button>
+        <button class="nav-btn" data-screen="review">🔄<span>مراجعة</span></button>
+        <button class="nav-btn active" data-screen="voice">🎤<span>تسميع</span></button>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/db.js"></script>
+  <script src="js/quran.js"></script>
+  <script src="js/memorization.js"></script>
+  <script src="js/voice.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -20,23 +20,24 @@ const App = (() => {
       // Load Quran index
       await QuranData.loadIndex();
 
-      // Pre-load full Quran for offline use
-      await QuranData.loadFull();
-
       // Setup navigation
       setupNavigation();
 
       // Setup voice screen
       setupVoiceScreen();
 
-      // Show home screen
+      // Hide loading screen, show home
+      document.getElementById('loading-screen').classList.remove('active');
       await showHome();
 
       // Register service worker
       registerServiceWorker();
+
+      // Pre-load full Quran in background (for offline use)
+      QuranData.loadFull().catch(err => console.warn('Background load failed:', err));
     } catch (error) {
       console.error('App initialization failed:', error);
-      document.querySelector('.loading-text').textContent = 'خطأ في التحميل';
+      document.querySelector('.loading-text').textContent = 'خطأ في التحميل. أعد تحميل الصفحة.';
     }
   }
 

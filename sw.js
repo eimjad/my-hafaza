@@ -5,17 +5,17 @@
 
 const CACHE_NAME = 'hafaza-v1';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/css/app.css',
-  '/js/db.js',
-  '/js/quran.js',
-  '/js/memorization.js',
-  '/js/voice.js',
-  '/js/app.js',
-  '/data/surahs.json',
-  '/data/quran-full.json',
-  '/manifest.json'
+  './',
+  './index.html',
+  './css/app.css',
+  './js/db.js',
+  './js/quran.js',
+  './js/memorization.js',
+  './js/voice.js',
+  './js/app.js',
+  './data/surahs.json',
+  './data/quran-full.json',
+  './manifest.json'
 ];
 
 // Install: cache all static assets
@@ -82,7 +82,7 @@ self.addEventListener('fetch', (event) => {
     }).catch(() => {
       // Offline fallback
       if (event.request.destination === 'document') {
-        return caches.match('/index.html');
+        return caches.match('./index.html');
       }
     })
   );

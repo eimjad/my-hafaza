@@ -2,7 +2,7 @@
   "name": "Hafaza - Quran Memorization",
   "short_name": "Hafaza",
   "description": "Offline Quran memorization assistant with voice verification",
-  "start_url": "/",
+  "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1a1a2e",

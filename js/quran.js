@@ -14,7 +14,7 @@ const QuranData = (() => {
   async function loadIndex() {
     if (surahs) return surahs;
 
-    const response = await fetch('data/surahs.json');
+    const response = await fetch('./data/surahs.json');
     surahs = await response.json();
     return surahs;
   }
@@ -25,7 +25,7 @@ const QuranData = (() => {
   async function loadSurah(surahNum) {
     if (loadedSurahs[surahNum]) return loadedSurahs[surahNum];
 
-    const filename = `data/surah_${String(surahNum).padStart(3, '0')}.json`;
+    const filename = `./data/surah_${String(surahNum).padStart(3, '0')}.json`;
     const response = await fetch(filename);
     const ayahs = await response.json();
     loadedSurahs[surahNum] = ayahs;
@@ -38,7 +38,7 @@ const QuranData = (() => {
   async function loadFull() {
     if (fullQuran) return fullQuran;
 
-    const response = await fetch('data/quran-full.json');
+    const response = await fetch('./data/quran-full.json');
     fullQuran = await response.json();
 
     // Populate loaded surahs cache

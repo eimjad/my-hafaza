@@ -1,14 +1,14 @@
 {
-  "name": "Hafaza - Quran Memorization",
+  "name": "Hafaza - Pembantu Hafazan Al-Quran",
   "short_name": "Hafaza",
-  "description": "Offline Quran memorization assistant with voice verification",
+  "description": "Pembantu hafazan Al-Quran secara luar talian dengan pengesahan suara",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1a1a2e",
   "theme_color": "#16213e",
-  "dir": "rtl",
-  "lang": "ar",
+  "dir": "ltr",
+  "lang": "ms",
   "icons": [
     {
       "src": "icons/icon-192.png",

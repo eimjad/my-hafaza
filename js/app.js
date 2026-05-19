@@ -6,8 +6,10 @@
 const App = (() => {
   let currentScreen = 'loading';
   let currentSurah = null;
+  let currentAyahScroll = null;
   let reviewQueue = [];
   let reviewIndex = 0;
+  let showTranslation = true;
 
   /**
    * Initialize the app
@@ -20,14 +22,27 @@ const App = (() => {
       // Load Quran index
       await QuranData.loadIndex();
 
+      // Initialize i18n
+      await I18n.init();
+
+      // Initialize theme
+      await Theme.init();
+
+      // Load translation preference
+      const savedTranslation = await HafazaDB.getSetting('showTranslation');
+      showTranslation = savedTranslation !== false;
+
       // Pre-load full Quran for offline use
       await QuranData.loadFull();
 
-      // Setup navigation
-      setupNavigation();
+      // Initialize search
+      await Search.init();
 
-      // Setup voice screen
+      // Setup all UI
+      setupNavigation();
+      setupSettings();
       setupVoiceScreen();
+      setupSearch();
 
       // Show home screen
       await showHome();
@@ -36,7 +51,8 @@ const App = (() => {
       registerServiceWorker();
     } catch (error) {
       console.error('App initialization failed:', error);
-      document.querySelector('.loading-text').textContent = 'خطأ في التحميل';
+      const loadingText = document.querySelector('.loading-text');
+      if (loadingText) loadingText.textContent = I18n.t('error.loading') || 'Error loading...';
     }
   }
 
@@ -47,6 +63,17 @@ const App = (() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then((reg) => {
         console.log('Service Worker registered:', reg.scope);
+
+        // Check for updates
+        reg.addEventListener('updatefound', () => {
+          const newWorker = reg.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'activated') {
+              // New SW activated - content updated automatically via network-first
+              console.log('New service worker activated - app updated');
+            }
+          });
+        });
       }).catch((err) => {
         console.log('Service Worker registration failed:', err);
       });
@@ -69,6 +96,10 @@ const App = (() => {
     document.getElementById('surah-back-btn')?.addEventListener('click', () => navigateTo('home'));
     document.getElementById('review-back-btn')?.addEventListener('click', () => navigateTo('home'));
     document.getElementById('voice-back-btn')?.addEventListener('click', () => navigateTo('home'));
+    document.getElementById('settings-back-btn')?.addEventListener('click', () => navigateTo('home'));
+
+    // Settings button
+    document.getElementById('settings-btn')?.addEventListener('click', () => navigateTo('settings'));
 
     // Review buttons
     document.getElementById('review-forgot')?.addEventListener('click', () => handleReview('forgot'));
@@ -78,6 +109,64 @@ const App = (() => {
 
     // Start review from home
     document.getElementById('start-review-btn')?.addEventListener('click', () => navigateTo('review'));
+
+    // Translation toggle in surah view
+    document.getElementById('toggle-translation')?.addEventListener('change', (e) => {
+      showTranslation = e.target.checked;
+      HafazaDB.setSetting('showTranslation', showTranslation);
+      if (currentSurah) showSurah(currentSurah);
+    });
+  }
+
+  /**
+   * Setup search
+   */
+  function setupSearch() {
+    Search.setupUI(
+      // onNavigateToSurah
+      (surahNum) => {
+        currentSurah = surahNum;
+        navigateTo('surah');
+      },
+      // onNavigateToAyah
+      (surahNum, ayahNum) => {
+        currentSurah = surahNum;
+        currentAyahScroll = ayahNum;
+        navigateTo('surah');
+      }
+    );
+  }
+
+  /**
+   * Setup settings screen
+   */
+  function setupSettings() {
+    // Language radio buttons
+    document.querySelectorAll('input[name="language"]').forEach(radio => {
+      radio.addEventListener('change', async (e) => {
+        await I18n.setLanguage(e.target.value);
+        // Re-render current screen content
+        if (currentScreen === 'settings') {
+          // Update settings labels
+        }
+      });
+    });
+
+    // Theme radio buttons
+    document.querySelectorAll('input[name="theme"]').forEach(radio => {
+      radio.addEventListener('change', async (e) => {
+        await Theme.setTheme(e.target.value);
+      });
+    });
+
+    // Translation toggle in settings
+    document.getElementById('settings-show-translation')?.addEventListener('change', (e) => {
+      showTranslation = e.target.checked;
+      HafazaDB.setSetting('showTranslation', showTranslation);
+      // Also sync the surah view toggle
+      const surahToggle = document.getElementById('toggle-translation');
+      if (surahToggle) surahToggle.checked = showTranslation;
+    });
   }
 
   /**
@@ -92,12 +181,12 @@ const App = (() => {
       btn.classList.toggle('active', btn.dataset.screen === screen);
     });
 
+    // Close search
+    Search.close();
+
     switch (screen) {
       case 'home':
         await showHome();
-        break;
-      case 'memorize':
-        await showHome(); // Show surah list
         break;
       case 'review':
         await showReview();
@@ -107,6 +196,9 @@ const App = (() => {
         break;
       case 'surah':
         await showSurah(currentSurah);
+        break;
+      case 'settings':
+        showSettings();
         break;
     }
 
@@ -128,10 +220,10 @@ const App = (() => {
     const reviewDue = document.getElementById('review-due');
     const startBtn = document.getElementById('start-review-btn');
     if (stats.dueReviews > 0) {
-      reviewDue.querySelector('.review-count').textContent = `${stats.dueReviews} آيات تحتاج مراجعة`;
+      reviewDue.querySelector('.review-count').textContent = I18n.t('home.reviewDue', { count: stats.dueReviews });
       startBtn.style.display = 'inline-block';
     } else {
-      reviewDue.querySelector('.review-count').textContent = 'لا توجد مراجعات مطلوبة';
+      reviewDue.querySelector('.review-count').textContent = I18n.t('home.noReviews');
       startBtn.style.display = 'none';
     }
 
@@ -162,15 +254,21 @@ const App = (() => {
     surahs.forEach(surah => {
       const memorized = progressMap[surah.number] || 0;
       const percent = surah.ayahCount > 0 ? Math.round((memorized / surah.ayahCount) * 100) : 0;
+      const localName = I18n.getSurahName(surah);
 
       html += `
         <div class="surah-item" data-surah="${surah.number}">
           <div class="surah-number">${surah.number}</div>
-          <div class="surah-name">${surah.name}</div>
-          <div class="surah-progress">
-            <div class="surah-progress-bar" style="width: ${percent}%"></div>
+          <div class="surah-info-block">
+            <div class="surah-name">${surah.name}</div>
+            <div class="surah-name-local">${localName}</div>
           </div>
-          <div class="surah-ayah-count">${surah.ayahCount} آية</div>
+          <div class="surah-meta">
+            <div class="surah-ayah-count">${surah.ayahCount} ${I18n.t('surah.ayahs')}</div>
+            <div class="surah-progress">
+              <div class="surah-progress-bar" style="width: ${percent}%"></div>
+            </div>
+          </div>
         </div>
       `;
     });
@@ -181,6 +279,7 @@ const App = (() => {
     container.querySelectorAll('.surah-item').forEach(item => {
       item.addEventListener('click', () => {
         currentSurah = parseInt(item.dataset.surah);
+        currentAyahScroll = null;
         navigateTo('surah');
       });
     });
@@ -201,7 +300,12 @@ const App = (() => {
 
     // Update header
     document.getElementById('surah-title').textContent = surahInfo.name;
-    document.getElementById('surah-info').textContent = `${surahInfo.ayahCount} آية`;
+    const localName = I18n.getSurahName(surahInfo);
+    document.getElementById('surah-info').textContent = `${localName} - ${surahInfo.ayahCount} ${I18n.t('surah.ayahs')}`;
+
+    // Sync translation toggle
+    const toggle = document.getElementById('toggle-translation');
+    if (toggle) toggle.checked = showTranslation;
 
     // Render ayahs
     const container = document.getElementById('ayah-list');
@@ -210,13 +314,14 @@ const App = (() => {
     ayahs.forEach(ayah => {
       const isMemorized = memorizedSet.has(ayah.number);
       html += `
-        <div class="ayah-item ${isMemorized ? 'memorized' : ''}" data-ayah="${ayah.number}">
-          <p class="ayah-text">${ayah.text} ﴿${ayah.number}﴾</p>
+        <div class="ayah-item ${isMemorized ? 'memorized' : ''}" data-ayah="${ayah.number}" id="ayah-${ayah.number}">
+          <p class="ayah-text arabic-text">${ayah.text} <span class="ayah-end-mark">﴿${ayah.number}﴾</span></p>
+          ${showTranslation ? `<p class="ayah-translation">${ayah.textPlain}</p>` : ''}
           <div class="ayah-meta">
-            <span class="ayah-number-badge">آية ${ayah.number}</span>
+            <span class="ayah-number-badge">${I18n.t('surah.ayah')} ${ayah.number}</span>
             <div class="ayah-actions">
               <button class="ayah-btn ${isMemorized ? 'memorized-btn' : ''}" data-action="memorize" data-surah="${surahNum}" data-ayah="${ayah.number}">
-                ${isMemorized ? '✓ محفوظة' : '☐ حفظ'}
+                ${isMemorized ? '&#10003; ' + I18n.t('surah.memorized') : I18n.t('surah.memorize')}
               </button>
             </div>
           </div>
@@ -237,18 +342,31 @@ const App = (() => {
         if (isCurrentlyMemorized) {
           await Memorization.unmarkMemorized(surah, ayah);
           btn.classList.remove('memorized-btn');
-          btn.textContent = '☐ حفظ';
+          btn.innerHTML = I18n.t('surah.memorize');
           btn.closest('.ayah-item').classList.remove('memorized');
         } else {
           await Memorization.markMemorized(surah, ayah);
           btn.classList.add('memorized-btn');
-          btn.textContent = '✓ محفوظة';
+          btn.innerHTML = '&#10003; ' + I18n.t('surah.memorized');
           btn.closest('.ayah-item').classList.add('memorized');
         }
       });
     });
 
     document.getElementById('surah-screen').classList.add('active');
+
+    // Scroll to specific ayah if set
+    if (currentAyahScroll) {
+      setTimeout(() => {
+        const ayahEl = document.getElementById(`ayah-${currentAyahScroll}`);
+        if (ayahEl) {
+          ayahEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          ayahEl.classList.add('highlighted');
+          setTimeout(() => ayahEl.classList.remove('highlighted'), 2000);
+        }
+        currentAyahScroll = null;
+      }, 100);
+    }
   }
 
   /**
@@ -278,7 +396,6 @@ const App = (() => {
    */
   async function showReviewCard() {
     if (reviewIndex >= reviewQueue.length) {
-      // All done
       document.getElementById('review-ayah-card').style.display = 'none';
       document.querySelector('.review-actions').style.display = 'none';
       document.getElementById('review-empty').style.display = 'block';
@@ -289,9 +406,9 @@ const App = (() => {
     const ayah = await QuranData.getAyah(item.surah, item.ayah);
     const surahInfo = QuranData.getSurahInfo(item.surah);
 
-    document.getElementById('review-surah-name').textContent = surahInfo?.name || '';
+    document.getElementById('review-surah-name').textContent = surahInfo ? `${surahInfo.name} - ${I18n.getSurahName(surahInfo)}` : '';
     document.getElementById('review-ayah-text').textContent = ayah?.text || '';
-    document.getElementById('review-ayah-number').textContent = `آية ${item.ayah}`;
+    document.getElementById('review-ayah-number').textContent = `${I18n.t('surah.ayah')} ${item.ayah}`;
   }
 
   /**
@@ -307,6 +424,27 @@ const App = (() => {
   }
 
   /**
+   * Show settings screen
+   */
+  function showSettings() {
+    // Set current language radio
+    const currentLang = I18n.getLang();
+    const langRadio = document.querySelector(`input[name="language"][value="${currentLang}"]`);
+    if (langRadio) langRadio.checked = true;
+
+    // Set current theme radio
+    const currentTheme = Theme.getTheme();
+    const themeRadio = document.querySelector(`input[name="theme"][value="${currentTheme}"]`);
+    if (themeRadio) themeRadio.checked = true;
+
+    // Set translation toggle
+    const transToggle = document.getElementById('settings-show-translation');
+    if (transToggle) transToggle.checked = showTranslation;
+
+    document.getElementById('settings-screen').classList.add('active');
+  }
+
+  /**
    * Setup voice verification screen
    */
   function setupVoiceScreen() {
@@ -317,7 +455,7 @@ const App = (() => {
     surahs.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.number;
-      opt.textContent = `${s.number}. ${s.name}`;
+      opt.textContent = `${s.number}. ${s.name} - ${I18n.getSurahName(s)}`;
       surahSelect.appendChild(opt);
     });
 
@@ -334,8 +472,7 @@ const App = (() => {
     // Check browser support
     const support = VoiceVerifier.checkSupport();
     if (!support.all) {
-      document.getElementById('voice-status-text').textContent =
-        'المتصفح لا يدعم التسجيل الصوتي';
+      document.getElementById('voice-status-text').textContent = I18n.t('voice.browserNotSupported') || 'Browser does not support voice recording';
     }
   }
 
@@ -354,12 +491,11 @@ const App = (() => {
 
     await showVoiceAyah(surahNum, 1);
 
-    // Enable record button if model is loaded
     if (VoiceVerifier.getState().modelLoaded) {
       document.getElementById('voice-record-btn').disabled = false;
     }
 
-    document.getElementById('voice-status-text').textContent = 'جاهز للتسجيل';
+    document.getElementById('voice-status-text').textContent = I18n.t('voice.ready');
   }
 
   /**
@@ -371,7 +507,7 @@ const App = (() => {
 
     if (ayah) {
       document.getElementById('voice-current-ayah').textContent = ayah.text;
-      document.getElementById('voice-ayah-ref').textContent = `${surahInfo.name} - آية ${ayahNum}`;
+      document.getElementById('voice-ayah-ref').textContent = `${surahInfo.name} - ${I18n.t('surah.ayah')} ${ayahNum}`;
     }
   }
 
@@ -383,19 +519,15 @@ const App = (() => {
     const statusText = document.getElementById('voice-status-text');
 
     if (!VoiceVerifier.getState().recording) {
-      // Start recording
       const started = await VoiceVerifier.startRecording();
       if (started) {
         btn.classList.add('recording');
-        btn.querySelector('.record-icon').textContent = '⏹';
-        statusText.textContent = 'جاري التسجيل... اضغط للإيقاف';
+        statusText.textContent = I18n.t('voice.recording');
         document.getElementById('voice-result').classList.add('hidden');
       }
     } else {
-      // Stop recording and process
       btn.classList.remove('recording');
-      btn.querySelector('.record-icon').textContent = '🎤';
-      statusText.textContent = 'جاري المعالجة...';
+      statusText.textContent = I18n.t('voice.processing');
 
       const audioBlob = await VoiceVerifier.stopRecording();
       if (audioBlob) {
@@ -419,32 +551,38 @@ const App = (() => {
       const ayah = await QuranData.getAyah(surahNum, ayahNum);
 
       if (!ayah) {
-        statusText.textContent = 'لم يتم العثور على الآية';
+        statusText.textContent = 'Verse not found';
         return;
       }
 
-      // Transcribe and compare
       const result = await VoiceVerifier.verifyRecitation(audioBlob, ayah.textPlain);
 
-      // Show result
       resultDiv.classList.remove('hidden');
-      resultText.textContent = result.transcription || '(لم يتم التعرف على الكلام)';
+      resultText.textContent = result.transcription || '(No speech detected)';
 
       if (result.comparison.score >= 80) {
         comparison.className = 'voice-comparison match';
-        comparison.textContent = `✓ ممتاز! التطابق: ${result.comparison.score}% (${result.comparison.correctWords}/${result.comparison.totalWords} كلمات)`;
+        comparison.textContent = I18n.t('voice.excellent', {
+          score: result.comparison.score,
+          correct: result.comparison.correctWords,
+          total: result.comparison.totalWords
+        });
       } else if (result.comparison.score >= 50) {
         comparison.className = 'voice-comparison mismatch';
-        comparison.textContent = `⚠ حاول مرة أخرى. التطابق: ${result.comparison.score}% (${result.comparison.correctWords}/${result.comparison.totalWords} كلمات)`;
+        comparison.textContent = I18n.t('voice.tryAgain', {
+          score: result.comparison.score,
+          correct: result.comparison.correctWords,
+          total: result.comparison.totalWords
+        });
       } else {
         comparison.className = 'voice-comparison mismatch';
-        comparison.textContent = `✗ يحتاج مراجعة. التطابق: ${result.comparison.score}%`;
+        comparison.textContent = I18n.t('voice.needsReview', { score: result.comparison.score });
       }
 
-      statusText.textContent = 'اضغط للتسجيل مرة أخرى';
+      statusText.textContent = I18n.t('voice.ready');
     } catch (error) {
       console.error('Voice processing error:', error);
-      statusText.textContent = 'خطأ في المعالجة. حاول مرة أخرى.';
+      statusText.textContent = 'Error processing. Try again.';
     }
   }
 
@@ -456,20 +594,20 @@ const App = (() => {
     const loadBtn = document.getElementById('load-model-btn');
 
     loadBtn.disabled = true;
-    statusText.textContent = 'جاري تحميل النموذج...';
+    statusText.textContent = 'Loading model...';
 
     const success = await VoiceVerifier.loadModel((progress) => {
-      statusText.textContent = `تحميل النموذج: ${progress}%`;
+      statusText.textContent = `Loading model: ${progress}%`;
     });
 
     if (success) {
-      statusText.textContent = 'نموذج الصوت: جاهز ✓';
+      statusText.textContent = 'Voice model: Ready';
       loadBtn.style.display = 'none';
       document.getElementById('voice-record-btn').disabled = false;
     } else {
-      statusText.textContent = 'فشل تحميل النموذج';
+      statusText.textContent = 'Failed to load model';
       loadBtn.disabled = false;
-      loadBtn.textContent = 'إعادة المحاولة';
+      loadBtn.textContent = 'Retry';
     }
   }
 

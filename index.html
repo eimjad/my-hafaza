@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ms" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#16213e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Hafaza - حافظة</title>
+  <title>Hafaza - Pembantu Hafazan Al-Quran</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -20,7 +20,7 @@
         <h1 class="app-title">حافظة</h1>
         <p class="app-subtitle">Hafaza</p>
         <div class="loading-spinner"></div>
-        <p class="loading-text">جاري التحميل...</p>
+        <p class="loading-text">Memuatkan...</p>
       </div>
     </div>
 
@@ -28,68 +28,113 @@
     <div id="home-screen" class="screen">
       <header class="app-header">
         <h1>حافظة</h1>
-        <button id="settings-btn" class="icon-btn" aria-label="Settings">⚙️</button>
+        <div class="header-actions">
+          <button id="settings-btn" class="icon-btn" aria-label="Settings">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
       </header>
 
-      <div class="stats-card">
-        <div class="stat">
-          <span class="stat-value" id="stat-memorized">0</span>
-          <span class="stat-label">آيات محفوظة</span>
+      <!-- Search Bar -->
+      <div class="search-container">
+        <div class="search-input-wrap">
+          <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="search-input" class="search-input" placeholder="Cari surah atau ayat..." autocomplete="off">
+          <button id="search-clear" class="search-clear hidden">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
         </div>
-        <div class="stat">
-          <span class="stat-value" id="stat-progress">0%</span>
-          <span class="stat-label">التقدم</span>
-        </div>
-        <div class="stat">
-          <span class="stat-value" id="stat-streak">0</span>
-          <span class="stat-label">أيام متتالية</span>
-        </div>
+        <div id="search-results" class="search-results hidden"></div>
       </div>
 
-      <div class="section">
-        <h2>مراجعة اليوم</h2>
-        <div id="review-due" class="review-card">
-          <p class="review-count">لا توجد مراجعات مطلوبة</p>
-          <button id="start-review-btn" class="btn btn-primary" style="display:none">ابدأ المراجعة</button>
+      <div class="home-content">
+        <div class="stats-card">
+          <div class="stat">
+            <span class="stat-value" id="stat-memorized">0</span>
+            <span class="stat-label" data-i18n="stats.memorized">Ayat Dihafal</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="stat-progress">0%</span>
+            <span class="stat-label" data-i18n="stats.progress">Kemajuan</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="stat-streak">0</span>
+            <span class="stat-label" data-i18n="stats.streak">Hari Berturut</span>
+          </div>
         </div>
-      </div>
 
-      <div class="section">
-        <h2>السور</h2>
-        <div id="surah-list" class="surah-list"></div>
+        <div class="section">
+          <h2 data-i18n="home.reviewToday">Ulangkaji Hari Ini</h2>
+          <div id="review-due" class="review-card">
+            <p class="review-count" data-i18n="home.noReviews">Tiada ulangkaji diperlukan</p>
+            <button id="start-review-btn" class="btn btn-primary" style="display:none" data-i18n="home.startReview">Mula Ulangkaji</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 data-i18n="home.surahs">Surah-surah</h2>
+          <div id="surah-list" class="surah-list"></div>
+        </div>
       </div>
 
       <nav class="bottom-nav">
-        <button class="nav-btn active" data-screen="home">🏠<span>الرئيسية</span></button>
-        <button class="nav-btn" data-screen="memorize">📖<span>حفظ</span></button>
-        <button class="nav-btn" data-screen="review">🔄<span>مراجعة</span></button>
-        <button class="nav-btn" data-screen="voice">🎤<span>تسميع</span></button>
+        <button class="nav-btn active" data-screen="home">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span data-i18n="nav.home">Utama</span>
+        </button>
+        <button class="nav-btn" data-screen="review">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          <span data-i18n="nav.review">Ulangkaji</span>
+        </button>
+        <button class="nav-btn" data-screen="voice">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          <span data-i18n="nav.voice">Tasmi'</span>
+        </button>
       </nav>
     </div>
 
     <!-- Surah View Screen -->
     <div id="surah-screen" class="screen">
       <header class="app-header">
-        <button id="surah-back-btn" class="icon-btn">→</button>
+        <button id="surah-back-btn" class="icon-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
         <h1 id="surah-title"></h1>
         <span id="surah-info"></span>
       </header>
 
+      <div class="surah-view-controls">
+        <label class="toggle-label">
+          <input type="checkbox" id="toggle-translation" checked>
+          <span data-i18n="surah.showTranslation">Tunjuk Terjemahan</span>
+        </label>
+      </div>
+
       <div id="ayah-list" class="ayah-list"></div>
 
       <nav class="bottom-nav">
-        <button class="nav-btn" data-screen="home">🏠<span>الرئيسية</span></button>
-        <button class="nav-btn active" data-screen="memorize">📖<span>حفظ</span></button>
-        <button class="nav-btn" data-screen="review">🔄<span>مراجعة</span></button>
-        <button class="nav-btn" data-screen="voice">🎤<span>تسميع</span></button>
+        <button class="nav-btn" data-screen="home">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span data-i18n="nav.home">Utama</span>
+        </button>
+        <button class="nav-btn" data-screen="review">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          <span data-i18n="nav.review">Ulangkaji</span>
+        </button>
+        <button class="nav-btn" data-screen="voice">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          <span data-i18n="nav.voice">Tasmi'</span>
+        </button>
       </nav>
     </div>
 
     <!-- Review Screen -->
     <div id="review-screen" class="screen">
       <header class="app-header">
-        <button id="review-back-btn" class="icon-btn">→</button>
-        <h1>مراجعة</h1>
+        <button id="review-back-btn" class="icon-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <h1 data-i18n="review.title">Ulangkaji</h1>
       </header>
 
       <div id="review-content" class="review-content">
@@ -100,42 +145,52 @@
             <p id="review-ayah-number" class="review-ayah-number"></p>
           </div>
           <div class="review-actions">
-            <button id="review-forgot" class="btn btn-danger">نسيت</button>
-            <button id="review-hard" class="btn btn-warning">صعب</button>
-            <button id="review-good" class="btn btn-success">جيد</button>
-            <button id="review-easy" class="btn btn-primary">سهل</button>
+            <button id="review-forgot" class="btn btn-danger" data-i18n="review.forgot">Lupa</button>
+            <button id="review-hard" class="btn btn-warning" data-i18n="review.hard">Sukar</button>
+            <button id="review-good" class="btn btn-success" data-i18n="review.good">Baik</button>
+            <button id="review-easy" class="btn btn-primary" data-i18n="review.easy">Mudah</button>
           </div>
         </div>
-        <div id="review-empty" class="empty-state">
-          <p>🎉</p>
-          <p>لا توجد مراجعات مطلوبة اليوم</p>
+        <div id="review-empty" class="empty-state" style="display:none">
+          <p>&#127881;</p>
+          <p data-i18n="review.noReviews">Tiada ulangkaji diperlukan hari ini</p>
         </div>
       </div>
 
       <nav class="bottom-nav">
-        <button class="nav-btn" data-screen="home">🏠<span>الرئيسية</span></button>
-        <button class="nav-btn" data-screen="memorize">📖<span>حفظ</span></button>
-        <button class="nav-btn active" data-screen="review">🔄<span>مراجعة</span></button>
-        <button class="nav-btn" data-screen="voice">🎤<span>تسميع</span></button>
+        <button class="nav-btn" data-screen="home">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span data-i18n="nav.home">Utama</span>
+        </button>
+        <button class="nav-btn active" data-screen="review">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          <span data-i18n="nav.review">Ulangkaji</span>
+        </button>
+        <button class="nav-btn" data-screen="voice">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          <span data-i18n="nav.voice">Tasmi'</span>
+        </button>
       </nav>
     </div>
 
     <!-- Voice Verification Screen -->
     <div id="voice-screen" class="screen">
       <header class="app-header">
-        <button id="voice-back-btn" class="icon-btn">→</button>
-        <h1>تسميع</h1>
+        <button id="voice-back-btn" class="icon-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <h1 data-i18n="voice.title">Tasmi'</h1>
       </header>
 
       <div class="voice-content">
         <div class="voice-selector">
           <select id="voice-surah-select" class="select-input">
-            <option value="">اختر السورة</option>
+            <option value="" data-i18n="voice.selectSurah">Pilih Surah</option>
           </select>
           <div class="ayah-range">
-            <input type="number" id="voice-ayah-from" class="num-input" placeholder="من" min="1">
+            <input type="number" id="voice-ayah-from" class="num-input" placeholder="Dari" min="1">
             <span>—</span>
-            <input type="number" id="voice-ayah-to" class="num-input" placeholder="إلى" min="1">
+            <input type="number" id="voice-ayah-to" class="num-input" placeholder="Hingga" min="1">
           </div>
         </div>
 
@@ -151,25 +206,103 @@
 
         <div class="voice-controls">
           <button id="voice-record-btn" class="record-btn" disabled>
-            <span class="record-icon">🎤</span>
-            <span class="record-label">اضغط للتسجيل</span>
+            <span class="record-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+            </span>
           </button>
           <div id="voice-status" class="voice-status">
-            <span id="voice-status-text">اختر السورة والآيات للبدء</span>
+            <span id="voice-status-text" data-i18n="voice.selectToStart">Pilih surah dan ayat untuk mula</span>
           </div>
           <div id="voice-model-status" class="model-status">
-            <span id="model-status-text">نموذج الصوت: غير محمّل</span>
-            <button id="load-model-btn" class="btn btn-small">تحميل النموذج</button>
+            <span id="model-status-text" data-i18n="voice.modelNotLoaded">Model suara: Belum dimuat</span>
+            <button id="load-model-btn" class="btn btn-small" data-i18n="voice.loadModel">Muat Model</button>
           </div>
         </div>
       </div>
 
       <nav class="bottom-nav">
-        <button class="nav-btn" data-screen="home">🏠<span>الرئيسية</span></button>
-        <button class="nav-btn" data-screen="memorize">📖<span>حفظ</span></button>
-        <button class="nav-btn" data-screen="review">🔄<span>مراجعة</span></button>
-        <button class="nav-btn active" data-screen="voice">🎤<span>تسميع</span></button>
+        <button class="nav-btn" data-screen="home">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span data-i18n="nav.home">Utama</span>
+        </button>
+        <button class="nav-btn" data-screen="review">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          <span data-i18n="nav.review">Ulangkaji</span>
+        </button>
+        <button class="nav-btn active" data-screen="voice">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          <span data-i18n="nav.voice">Tasmi'</span>
+        </button>
       </nav>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings-screen" class="screen">
+      <header class="app-header">
+        <button id="settings-back-btn" class="icon-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <h1 data-i18n="settings.title">Tetapan</h1>
+      </header>
+
+      <div class="settings-content">
+        <div class="settings-group">
+          <h3 data-i18n="settings.language">Bahasa</h3>
+          <p class="settings-desc" data-i18n="settings.languageDesc">Pilih bahasa antara muka</p>
+          <div class="settings-options">
+            <label class="radio-option">
+              <input type="radio" name="language" value="ms">
+              <span>Bahasa Melayu</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="language" value="en">
+              <span>English</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3 data-i18n="settings.theme">Tema</h3>
+          <p class="settings-desc" data-i18n="settings.themeDesc">Pilih tema paparan</p>
+          <div class="settings-options theme-options">
+            <label class="radio-option">
+              <input type="radio" name="theme" value="auto">
+              <span data-i18n="settings.themeAuto">Automatik (Ikut Peranti)</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="theme" value="dark">
+              <span data-i18n="settings.themeDark">Gelap</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="theme" value="light">
+              <span data-i18n="settings.themeLight">Cerah</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="theme" value="emerald">
+              <span data-i18n="settings.themeEmerald">Zamrud Hijau</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="theme" value="brown-gold">
+              <span data-i18n="settings.themeBrownGold">Coklat Emas</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group">
+          <h3 data-i18n="settings.translation">Terjemahan</h3>
+          <p class="settings-desc" data-i18n="settings.translationDesc">Tunjuk terjemahan semasa melihat ayat</p>
+          <label class="toggle-option">
+            <input type="checkbox" id="settings-show-translation" checked>
+            <span class="toggle-switch"></span>
+            <span data-i18n="settings.showTranslation">Tunjuk terjemahan</span>
+          </label>
+        </div>
+
+        <div class="settings-group">
+          <h3 data-i18n="settings.about">Mengenai</h3>
+          <p class="settings-about">Hafaza v2.0 - Pembantu Hafazan Al-Quran</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -178,6 +311,9 @@
   <script src="js/quran.js"></script>
   <script src="js/memorization.js"></script>
   <script src="js/voice.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/search.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

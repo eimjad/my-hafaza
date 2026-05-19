@@ -1,10 +1,14 @@
 /**
  * Hafaza - Service Worker
- * Caches all app assets for fully offline operation
+ * Uses network-first for HTML/JS/CSS (app shell) to avoid stale cache issues
+ * Cache-first for data files (quran JSON) since they rarely change
  */
 
-const CACHE_NAME = 'hafaza-v1';
-const STATIC_ASSETS = [
+const CACHE_VERSION = 2;
+const APP_CACHE = `hafaza-app-v${CACHE_VERSION}`;
+const DATA_CACHE = `hafaza-data-v${CACHE_VERSION}`;
+
+const APP_ASSETS = [
   '/',
   '/index.html',
   '/css/app.css',
@@ -13,77 +17,114 @@ const STATIC_ASSETS = [
   '/js/memorization.js',
   '/js/voice.js',
   '/js/app.js',
-  '/data/surahs.json',
-  '/data/quran-full.json',
   '/manifest.json'
 ];
 
-// Install: cache all static assets
+const DATA_ASSETS = [
+  '/data/surahs.json',
+  '/data/quran-full.json',
+  '/data/search-index.json'
+];
+
+// Install: cache all assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching static assets');
-      return cache.addAll(STATIC_ASSETS);
-    })
+    Promise.all([
+      caches.open(APP_CACHE).then(cache => {
+        console.log('[SW] Caching app assets');
+        return cache.addAll(APP_ASSETS);
+      }),
+      caches.open(DATA_CACHE).then(cache => {
+        console.log('[SW] Caching data assets');
+        return cache.addAll(DATA_ASSETS);
+      })
+    ])
   );
+  // Force activate immediately - don't wait for old SW to die
   self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: clean old caches and take control immediately
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
+    caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        keys.filter(key => key !== APP_CACHE && key !== DATA_CACHE && !key.startsWith('hafaza-models'))
+          .map(key => {
+            console.log('[SW] Removing old cache:', key);
+            return caches.delete(key);
+          })
       );
+    }).then(() => {
+      // Take control of all clients immediately
+      return self.clients.claim();
     })
   );
-  self.clients.claim();
 });
 
-// Fetch: serve from cache first, then network
+// Fetch strategy
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
-  // Skip CDN requests (Transformers.js model downloads)
   const url = new URL(event.request.url);
+
+  // CDN requests (model downloads): network first, cache fallback
   if (url.hostname.includes('huggingface.co') || url.hostname.includes('cdn.jsdelivr.net')) {
-    // For model files, try network first, then cache
     event.respondWith(
       caches.open('hafaza-models').then(cache => {
-        return cache.match(event.request).then(cached => {
-          if (cached) return cached;
-          return fetch(event.request).then(response => {
-            if (response.ok) {
-              cache.put(event.request, response.clone());
-            }
-            return response;
-          });
-        });
+        return fetch(event.request).then(response => {
+          if (response.ok) cache.put(event.request, response.clone());
+          return response;
+        }).catch(() => cache.match(event.request));
       })
     );
     return;
   }
 
-  // For app assets: cache first, then network
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
+  // Same-origin only
+  if (url.origin !== self.location.origin) return;
 
-      return fetch(event.request).then((response) => {
-        // Cache successful responses for app assets
-        if (response.ok && url.origin === self.location.origin) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      });
-    }).catch(() => {
-      // Offline fallback
-      if (event.request.destination === 'document') {
-        return caches.match('/index.html');
+  // Data files: cache first, network fallback (data rarely changes)
+  if (url.pathname.startsWith('/data/')) {
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        return fetch(event.request).then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(DATA_CACHE).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        });
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // App shell (HTML/JS/CSS): network first, cache fallback
+  // This ensures users always get the latest version without hard reload
+  event.respondWith(
+    fetch(event.request).then(response => {
+      if (response.ok) {
+        const clone = response.clone();
+        caches.open(APP_CACHE).then(cache => cache.put(event.request, clone));
       }
+      return response;
+    }).catch(() => {
+      return caches.match(event.request).then(cached => {
+        if (cached) return cached;
+        // Fallback to index for navigation requests
+        if (event.request.destination === 'document') {
+          return caches.match('/index.html');
+        }
+      });
     })
   );
+});
+
+// Listen for messages from the app
+self.addEventListener('message', (event) => {
+  if (event.data === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });

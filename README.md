@@ -1,6 +1,6 @@
 # Hafaza PWA
 
-**Offline-first Quran Memorization PWA with Voice Verification**
+**Offline-first PWA Quran Memorization with Voice Verification**
 
 A Progressive Web App that helps users memorize the Quran through spaced repetition and voice-based recitation verification — all running 100% offline on the user's device after initial install.
 

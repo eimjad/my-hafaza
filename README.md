@@ -1,4 +1,4 @@
-# Hafaza حافظة
+# Hafaza PWA
 
 **Offline-first Quran Memorization PWA with Voice Verification**
 
